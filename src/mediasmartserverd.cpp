@@ -49,6 +49,7 @@
 #include "led_acer_altos_m2.h"
 #include "led_acerh341.h"
 #include "led_hpex485.h"
+#include "led_arduino.h"
 #include "update_monitor.h"
 #include <iomanip>
 #include <iostream>
@@ -69,6 +70,10 @@ using std::cout;
 int debug = 0;		///< show debug messages
 int verbose = 0;	///< how much debugging we spew out
 bool activity = 0;	///< do we make the lights blink?
+bool use_arduino = false;	///< use Arduino USB serial LED driver
+const char* serial_port = "/dev/ttyACM0";	///< Arduino serial port
+bool bay_map_enabled = false;	///< use custom SCSI host → LED bay mapping
+int bay_map[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 
 
@@ -121,7 +126,15 @@ const char *GetUdevDeviceAttribute(const char *subsystem, const char *sysname, c
 /// attempt to get an LED control interface
 LedControlPtr get_led_interface( ) {
 	LedControlPtr control;
-	
+
+	// Arduino USB serial mode (bypasses DMI detection)
+	if ( use_arduino ) {
+		if ( verbose > 0 ) cout << "Using Arduino LED driver on " << serial_port << "\n";
+		control.reset( new LedArduino( serial_port ) );
+		if ( control->Init( ) ) return control;
+		return LedControlPtr( );
+	}
+
 	const char *systemVendor = GetUdevDeviceAttribute("dmi", "id", "sys_vendor");
 	const char *productName = GetUdevDeviceAttribute("dmi", "id", "product_name");
 	
@@ -175,14 +188,17 @@ LedControlPtr get_led_interface( ) {
 /// show command line help
 int show_help( ) {
 	cout << "Usage: mediasmartserverd [OPTION]...\n"
+		<< " -A, --arduino         Use Arduino USB serial LED driver\n"
+		<< " -P, --serial-port=DEV Serial port for Arduino (default: /dev/ttyACM0)\n"
+		<< " -M, --bay-map=H,H,.. Map SCSI hosts to LED bays (e.g. 2,3,4,5)\n"
 		<< "     --brightness=X    Set LED brightness (1 to 10)\n"
 		<< " -D, --daemon          Detach and run in the background\n"
 		<< " -a, --activity        Use the bay lights as disk activity lights\n"
 		<< "     --debug           Print debug messages\n"
 		<< "     --help            Print help text\n"
 		<< " -u  --update-monitor  Use system LED as update notification light\n"
-		<< " -v, --verbose         verbose (use twice to be more verbose)\n" 
-		<< " -V, --version         Show version number\n" 
+		<< " -v, --verbose         verbose (use twice to be more verbose)\n"
+		<< " -V, --version         Show version number\n"
 	;
 	
 	return 0;
@@ -297,12 +313,15 @@ int main( int argc, char* argv[] ) try {
 	
 	// long command line arguments
 	const struct option long_opts[] = {
+		{ "arduino",        no_argument,       0, 'A' },
 		{ "brightness",     required_argument, 0, 'b' },
 		{ "daemon",         no_argument,       0, 'D' },
 		{ "activity",       no_argument,       0, 'a' },
 		{ "debug",          no_argument,       0, 'd' },
 		{ "help",           no_argument,       0, 'h' },
 		{ "light-show",     required_argument, 0, 'S' },
+		{ "bay-map",        required_argument, 0, 'M' },
+		{ "serial-port",    required_argument, 0, 'P' },
 		{ "update-monitor", no_argument,       0, 'u' },
 		{ "usb",            required_argument, 0, 'U' },
 		{ "verbose",        no_argument,       0, 'v' },
@@ -313,10 +332,40 @@ int main( int argc, char* argv[] ) try {
 	
 	// pass command line arguments
 	while ( true ) {
-		const int c = getopt_long( argc, argv, "aDuvV", long_opts, 0 );
+		const int c = getopt_long( argc, argv, "aADM:P:uvV", long_opts, 0 );
 		if ( -1 == c ) break;
-		
+
 		switch ( c ) {
+		case 'A': // use Arduino USB serial LED driver
+			use_arduino = true;
+			break;
+		case 'P': // serial port for Arduino
+			if ( optarg ) serial_port = optarg;
+			break;
+		case 'M': // bay mapping: comma-separated SCSI host numbers in bay order
+			if ( optarg ) {
+				bay_map_enabled = true;
+				int bay = 0;
+				char* str = strdup( optarg );
+				char* tok = strtok( str, "," );
+				while ( tok && bay < 10 ) {
+					int host = atoi( tok );
+					if ( host >= 0 && host < 10 ) {
+						bay_map[host] = bay;
+					}
+					++bay;
+					tok = strtok( 0, "," );
+				}
+				free( str );
+				if ( verbose > 0 ) {
+					cout << "Bay map: ";
+					for ( int i = 0; i < 10; ++i ) {
+						if ( bay_map[i] >= 0 ) cout << "host" << i << "->bay" << bay_map[i] << " ";
+					}
+					cout << "\n";
+				}
+			}
+			break;
 		case 'b': // brightness
 			if ( optarg ) brightness = atoi( optarg );
 			break;

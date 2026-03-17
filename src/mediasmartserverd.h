@@ -35,4 +35,10 @@ extern int debug;
 extern int verbose;
 extern bool activity;
 
+//- bay mapping: translates SCSI host index to LED bay index
+//  bay_map[scsi_host] = led_bay, or -1 if unmapped
+//  when bay_map_enabled is false, scsi_host index is used directly (original behavior)
+extern bool bay_map_enabled;
+extern int bay_map[10];
+
 #endif // INCLUDED_LED_MEDIASMARTSERVERD
