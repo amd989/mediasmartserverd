@@ -218,9 +218,11 @@ void DeviceMonitor::deviceRemove_( udev_device* device ) {
 void DeviceMonitor::deviceChanged_( udev_device* device, bool state ) {
 	if (!acceptDevice_(device)) return;
 
-	int led_idx = scsiHostIndex_(device);
+	int scsi_idx = scsiHostIndex_(device);
+	if (scsi_idx < 0) return;
+	int led_idx = mapHostToLed_( scsi_idx );
 	if (led_idx < 0) return;
-	if (debug) std::cout << " device: " << udev_device_get_syspath(device) << "\n led: " << led_idx << "\n";
+	if (debug) std::cout << " device: " << udev_device_get_syspath(device) << "\n scsi_host: " << scsi_idx << " led: " << led_idx << "\n";
 
 	// finally we can play with the appopriate LED
 	if ( leds_ ) leds_->Set( LED_BLUE, led_idx, state );
@@ -254,9 +256,11 @@ void DeviceMonitor::enumDevices_( ) {
 
 		if (!acceptDevice_(device.get())) continue;
 
-		int led_idx = scsiHostIndex_(device.get());
+		int scsi_idx = scsiHostIndex_(device.get());
+		if (scsi_idx < 0) continue;
+		int led_idx = mapHostToLed_( scsi_idx );
 		if (led_idx < 0) continue;
-		if (debug || verbose > 1) std::cout << " device: " << udev_device_get_syspath(device.get()) << "\n led: " << led_idx << "\n";
+		if (debug || verbose > 1) std::cout << " device: " << udev_device_get_syspath(device.get()) << "\n scsi_host: " << scsi_idx << " led: " << led_idx << "\n";
 
 		leds_idx_[num_disks_] = led_idx;
 
@@ -321,6 +325,14 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	}
 
 	return scsi_host_index;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/// map SCSI host index to LED bay index
+int DeviceMonitor::mapHostToLed_( int scsi_host_index ) {
+	if ( !bay_map_enabled ) return scsi_host_index;
+	if ( scsi_host_index < 0 || scsi_host_index >= 10 ) return -1;
+	return bay_map[scsi_host_index];
 }
 
 /////////////////////////////////////////////////////////////////////////////

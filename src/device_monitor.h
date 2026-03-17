@@ -61,6 +61,7 @@ protected:
 	void deviceChanged_( udev_device* device, bool state );
 	void enumDevices_();
 	int scsiHostIndex_( udev_device* device );
+	int mapHostToLed_( int scsi_host_index );
 	bool acceptDevice_( udev_device* device );
 	
 	udev*			dev_context_;	///< udev library context
