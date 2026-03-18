@@ -105,37 +105,36 @@ host index is used directly as the LED bay index).
 ## Arduino LED Driver
 
 For hardware where the original motherboard (SCH5127 + ICH9 chipset) is no
-longer available, the LED daughter board can be wired to an Arduino Pro Micro
-(or compatible ATmega32U4 board) and controlled over USB serial.
+longer available, the LED daughter board can be wired to a microcontroller
+and controlled over USB serial. Two firmware variants are provided:
 
 The daughter board has 4 dual-color (blue/red) LEDs with inline resistors —
-each LED wire connects directly to an Arduino GPIO pin.
+each LED wire connects directly to a microcontroller GPIO pin.
+
+### Supported Boards
+
+| Board | Firmware | Voltage | PWM Brightness | Notes |
+|-------|----------|---------|----------------|-------|
+| Arduino Pro Micro | `arduino/mediasmartserver_leds/` | 5V | System LED only | ATmega32U4, native USB |
+| Raspberry Pi Pico | `arduino/mediasmartserver_leds_pico/` | 3.3V | All LEDs | RP2040, all GPIOs have PWM |
+
+Both use the same serial protocol — the daemon doesn't need any changes
+between boards. See each board's `README.md` for pin mapping, wiring, and
+flash instructions.
 
 ### Setup
 
-1. Flash the firmware from `arduino/mediasmartserver_leds/` to your Arduino
-2. Wire the LED daughter board to the Arduino pins (see `arduino/README.md`
-   for the pin mapping and wiring guide)
-3. Connect the Arduino to your server via USB
+1. Flash the firmware for your board (see links above)
+2. Wire the LED daughter board to the GPIO pins
+3. Connect the board to your server via USB
 4. Run the daemon with `--arduino`:
 
 ```bash
 ./mediasmartserverd --arduino --activity --verbose
 ```
 
-The Arduino driver communicates over USB serial at 115200 baud using a simple
-ASCII protocol. See `arduino/README.md` for the full protocol reference,
-troubleshooting tips, and serial monitor testing instructions.
-
-### Pin Summary
-
-| Function | Pins |
-|----------|------|
-| Bay 0-3 Blue | 2, 3, 4, 5 |
-| Bay 0-3 Red | 6, 7, 8, 9 |
-| System Blue | 10 (PWM) |
-| System Red | 16 |
-| USB LED | 14 |
+The driver communicates over USB serial at 115200 baud using a simple
+ASCII protocol. Both boards show up as `/dev/ttyACM*` on Linux.
 
 -----------------------------------------------------------------------------
 
@@ -159,6 +158,7 @@ assignments.
 | Acer Altos easyStore M2 | LedAcerAltosM2 | SCH5127 + ICH7 |
 | Lenovo IdeaCentre D400 | LedAcerH340 | SCH5127 + ICH7 |
 | Arduino Pro Micro (custom) | LedArduino | USB serial |
+| Raspberry Pi Pico (custom) | LedArduino | USB serial |
 
 The chipset-based drivers are auto-detected via DMI vendor/product strings.
-The Arduino driver is selected explicitly with `--arduino`.
+The USB serial driver is selected explicitly with `--arduino`.
