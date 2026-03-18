@@ -36,7 +36,18 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#if defined(__i386__) || defined(__x86_64__)
 #include <sys/io.h>
+#else
+// Stubs for non-x86 platforms (SCH5127 hardware doesn't exist on ARM etc.)
+static inline int ioperm(unsigned long from, unsigned long num, int turn_on) { (void)from; (void)num; (void)turn_on; return -1; }
+static inline unsigned char inb(unsigned short port) { (void)port; return 0; }
+static inline unsigned short inw(unsigned short port) { (void)port; return 0; }
+static inline unsigned int inl(unsigned short port) { (void)port; return 0; }
+static inline void outb(unsigned char value, unsigned short port) { (void)value; (void)port; }
+static inline void outw(unsigned short value, unsigned short port) { (void)value; (void)port; }
+static inline void outl(unsigned int value, unsigned short port) { (void)value; (void)port; }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 /// base class for LED control over systems using the SCH5127 chipset

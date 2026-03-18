@@ -1,31 +1,20 @@
 Source: mediasmartserver
 Section: utils
-Priority: extra
-Maintainer: Marlen Antonyan <merelin@gmail.com>
-Build-Depends: debhelper, libudev-dev, g++ (>= 4:4.3.1)
-Standards-Version: 3.9.3
-Homepage: https://github.com/merelin/mediasmartserverd.git
-#Vcs-Git: git://git.debian.org/collab-maint/mediasmartserver.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/mediasmartserver.git;a=summary
+Priority: optional
+Maintainer: amd989 <amd989@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), libudev-dev, g++
+Standards-Version: 4.6.2
+Homepage: https://github.com/amd989/mediasmartserverd
+Vcs-Git: https://github.com/amd989/mediasmartserverd.git
+Vcs-Browser: https://github.com/amd989/mediasmartserverd
 
 Package: mediasmartserver
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libudev0, upstart-job, update-notifier-common
-Description: This is a Linux daemon that controls the status LEDs
- of the HP MediaSmart Server ex48X and Acer Aspire easyStore H340.
- The driver has been published at the following forum topic:
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LED status daemon for HP MediaSmart Server and compatible hardware
+ Linux daemon that controls drive bay status LEDs on HP MediaSmart Server
+ EX48X, Acer H340/H341/H342, Acer Altos easyStore M2, and Lenovo IdeaCentre
+ D400. Also supports Arduino-based USB serial LED control for custom builds.
  .
-     http://www.mediasmartserver.net/forums/viewtopic.php?f=23&t=7720
- .
- The packaged version contains the original code from the repository:
- .
-     https://bitbucket.org/adaptation/mediasmartserverd/wiki/Home
- .
- with activity-v2.patch.txt applied
- and my fixes for:
-     - incorrect bay index detection
-     - incorrect hot-swap drives detection upon addition and removal.
- .
- I would like to thank all the guys from the topic for their work.
- .
- Built from the https://github.com/merelin/mediasmartserverd.git repository.
+ Monitors disk presence and activity via udev/sysfs, provides system update
+ notifications via LED colors, and supports light show animations.
