@@ -10,15 +10,18 @@ Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  gcc-c++
 BuildRequires:  make
+BuildRequires:  pkgconfig
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  systemd-devel
+BuildRequires:  libgpiod-devel
 
 Requires:       systemd
 
 %description
 Linux daemon that controls drive bay status LEDs on HP MediaSmart Server
 EX48X, Acer H340/H341/H342, Acer Altos easyStore M2, and Lenovo IdeaCentre
-D400. Also supports Arduino-based USB serial LED control for custom builds.
+D400. Also supports Arduino-based USB serial LED control and direct GPIO
+control via libgpiod for Raspberry Pi and similar boards.
 
 Monitors disk presence and activity via udev/sysfs, provides system update
 notifications via LED colors, and supports light show animations.

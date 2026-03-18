@@ -8,6 +8,13 @@ CFLAGS = $(FLAGS)
 CXXFLAGS = $(CFLAGS)
 LDFLAGS = -ludev -ldl -lpthread
 
+# optional libgpiod support (for direct GPIO LED control on Raspberry Pi etc.)
+HAVE_GPIOD := $(shell pkg-config --exists libgpiod 2>/dev/null && echo 1)
+ifeq ($(HAVE_GPIOD),1)
+  CXXFLAGS += -DHAVE_LIBGPIOD $(shell pkg-config --cflags libgpiod)
+  LDFLAGS += $(shell pkg-config --libs libgpiod)
+endif
+
 # build libraries and options
 all: clean mediasmartserverd
 

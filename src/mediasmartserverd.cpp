@@ -50,6 +50,7 @@
 #include "led_acerh341.h"
 #include "led_hpex485.h"
 #include "led_arduino.h"
+#include "led_gpio.h"
 #include "update_monitor.h"
 #include <iomanip>
 #include <iostream>
@@ -72,6 +73,9 @@ int verbose = 0;	///< how much debugging we spew out
 bool activity = 0;	///< do we make the lights blink?
 bool use_arduino = false;	///< use Arduino USB serial LED driver
 const char* serial_port = "/dev/ttyACM0";	///< Arduino serial port
+bool use_gpio = false;		///< use Linux GPIO LED driver
+const char* gpio_chip = "/dev/gpiochip0";	///< GPIO chip device path
+int gpio_pins[LedGpio::NUM_PINS] = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };	///< default GPIO pin mapping
 bool bay_map_enabled = false;	///< use custom SCSI host → LED bay mapping
 int bay_map[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
@@ -135,6 +139,14 @@ LedControlPtr get_led_interface( ) {
 		return LedControlPtr( );
 	}
 
+	// Linux GPIO mode (bypasses DMI detection)
+	if ( use_gpio ) {
+		if ( verbose > 0 ) cout << "Using GPIO LED driver on " << gpio_chip << "\n";
+		control.reset( new LedGpio( gpio_chip, gpio_pins ) );
+		if ( control->Init( ) ) return control;
+		return LedControlPtr( );
+	}
+
 	const char *systemVendor = GetUdevDeviceAttribute("dmi", "id", "sys_vendor");
 	const char *productName = GetUdevDeviceAttribute("dmi", "id", "product_name");
 	
@@ -190,6 +202,10 @@ int show_help( ) {
 	cout << "Usage: mediasmartserverd [OPTION]...\n"
 		<< " -A, --arduino         Use Arduino USB serial LED driver\n"
 		<< " -P, --serial-port=DEV Serial port for Arduino (default: /dev/ttyACM0)\n"
+		<< " -G, --gpio            Use Linux GPIO LED driver (libgpiod)\n"
+		<< " -C, --gpio-chip=DEV   GPIO chip device (default: /dev/gpiochip0)\n"
+		<< " -N, --gpio-pins=P,..  GPIO pin numbers (11 pins: 4 bay blue, 4 bay red,\n"
+		<< "                        sys blue, sys red, USB; default: 2,3,4,5,6,7,8,9,10,11,12)\n"
 		<< " -M, --bay-map=H,H,.. Map SCSI hosts to LED bays (e.g. 2,3,4,5)\n"
 		<< "     --brightness=X    Set LED brightness (1 to 10)\n"
 		<< " -D, --daemon          Detach and run in the background\n"
@@ -318,6 +334,9 @@ int main( int argc, char* argv[] ) try {
 		{ "daemon",         no_argument,       0, 'D' },
 		{ "activity",       no_argument,       0, 'a' },
 		{ "debug",          no_argument,       0, 'd' },
+		{ "gpio",           no_argument,       0, 'G' },
+		{ "gpio-chip",      required_argument, 0, 'C' },
+		{ "gpio-pins",      required_argument, 0, 'N' },
 		{ "help",           no_argument,       0, 'h' },
 		{ "light-show",     required_argument, 0, 'S' },
 		{ "bay-map",        required_argument, 0, 'M' },
@@ -332,7 +351,7 @@ int main( int argc, char* argv[] ) try {
 	
 	// pass command line arguments
 	while ( true ) {
-		const int c = getopt_long( argc, argv, "aADM:P:uvV", long_opts, 0 );
+		const int c = getopt_long( argc, argv, "aAC:DGM:N:P:uvV", long_opts, 0 );
 		if ( -1 == c ) break;
 
 		switch ( c ) {
@@ -341,6 +360,24 @@ int main( int argc, char* argv[] ) try {
 			break;
 		case 'P': // serial port for Arduino
 			if ( optarg ) serial_port = optarg;
+			break;
+		case 'G': // use Linux GPIO LED driver
+			use_gpio = true;
+			break;
+		case 'C': // GPIO chip device path
+			if ( optarg ) gpio_chip = optarg;
+			break;
+		case 'N': // GPIO pin mapping: comma-separated list of 11 pin numbers
+			if ( optarg ) {
+				int idx = 0;
+				char* str = strdup( optarg );
+				char* tok = strtok( str, "," );
+				while ( tok && idx < LedGpio::NUM_PINS ) {
+					gpio_pins[idx++] = atoi( tok );
+					tok = strtok( 0, "," );
+				}
+				free( str );
+			}
 			break;
 		case 'M': // bay mapping: comma-separated SCSI host numbers in bay order
 			if ( optarg ) {

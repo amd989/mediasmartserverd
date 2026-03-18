@@ -86,6 +86,9 @@ mediasmartserverd [-D] [-v] [-V] [--brightness <level>]
 | `-V, --version` | Print version number |
 | `-A, --arduino` | Use Arduino USB serial LED driver |
 | `-P, --serial-port=DEV` | Serial port for Arduino (default: /dev/ttyACM0) |
+| `-G, --gpio` | Use Linux GPIO LED driver (libgpiod) |
+| `-C, --gpio-chip=DEV` | GPIO chip device (default: /dev/gpiochip0) |
+| `-N, --gpio-pins=P,...` | GPIO pin numbers (11 pins, see [GPIO Driver](#gpio-driver)) |
 | `-M, --bay-map=H,H,...` | Map SCSI host numbers to LED bays (see below) |
 
 ```bash
@@ -97,6 +100,12 @@ sudo ./mediasmartserverd --arduino --activity
 
 # Arduino on a specific serial port
 sudo ./mediasmartserverd --arduino --serial-port=/dev/ttyACM1 --activity
+
+# run with direct GPIO on Raspberry Pi
+sudo ./mediasmartserverd --gpio --activity
+
+# GPIO with custom chip and pin mapping
+sudo ./mediasmartserverd --gpio --gpio-chip=/dev/gpiochip4 --gpio-pins=2,3,4,5,6,7,8,9,10,11,12 --activity
 
 # test LEDs with light show
 sudo ./mediasmartserverd --light-show=1
@@ -111,9 +120,14 @@ sudo ./mediasmartserverd --brightness=5
 
 Requires: `g++`, `libudev-dev`, `make`
 
+Optional (for GPIO driver): `libgpiod-dev`, `pkg-config`
+
 ```bash
 make
 ```
+
+If `libgpiod-dev` is installed, the GPIO driver is automatically compiled in.
+Without it, the daemon builds normally but `--gpio` will print an error.
 
 -----------------------------------------------------------------------------
 
@@ -184,6 +198,58 @@ ASCII protocol. Both boards show up as `/dev/ttyACM*` on Linux.
 
 -----------------------------------------------------------------------------
 
+## GPIO Driver
+
+For boards like Raspberry Pi where the LED daughter board can be wired
+directly to GPIO pins, the daemon can drive the LEDs using libgpiod —
+no intermediary microcontroller needed. This is similar to how the original
+hardware worked (driving LEDs directly from the chipset).
+
+### How it Works
+
+- Uses **libgpiod v1** to control GPIO pins as outputs
+- **Software PWM** via a dedicated thread: 1kHz loop, 10 steps per cycle
+  = 100Hz flicker-free PWM. Brightness 0-9 maps to duty cycle
+- **Blink** for system LEDs: 500ms toggle handled in the PWM thread
+
+### Pin Mapping
+
+The `--gpio-pins` option takes 11 comma-separated GPIO pin numbers in this
+order:
+
+| Index | Function | Default Pin |
+|-------|----------|-------------|
+| 0-3 | Bay 0-3 blue | 2, 3, 4, 5 |
+| 4-7 | Bay 0-3 red | 6, 7, 8, 9 |
+| 8 | System blue | 10 |
+| 9 | System red | 11 |
+| 10 | USB indicator | 12 |
+
+Use `-1` for any pin you don't want to use.
+
+### Setup
+
+1. Wire the LED daughter board to GPIO pins on your Raspberry Pi
+2. Install libgpiod: `sudo apt install libgpiod2`
+3. Run with `--gpio`:
+
+```bash
+# Default pins on /dev/gpiochip0
+sudo ./mediasmartserverd --gpio --activity
+
+# Custom chip and pins
+sudo ./mediasmartserverd --gpio --gpio-chip=/dev/gpiochip4 \
+  --gpio-pins=17,27,22,23,24,25,5,6,13,19,26 --activity
+```
+
+Set it permanently in the systemd service file:
+
+```ini
+ExecStart=/usr/sbin/mediasmartserverd --gpio --activity --gpio-pins=17,27,22,23,24,25,5,6,13,19,26
+```
+
+-----------------------------------------------------------------------------
+
 ## Original Hardware
 
 On the EX485, LED brightness, fan control, and voltage sensors are connected
@@ -205,6 +271,7 @@ assignments.
 | Lenovo IdeaCentre D400 | LedAcerH340 | SCH5127 + ICH7 |
 | Arduino Pro Micro (custom) | LedArduino | USB serial |
 | Raspberry Pi Pico (custom) | LedArduino | USB serial |
+| Raspberry Pi / SBC (custom) | LedGpio | Linux GPIO (libgpiod) |
 
 The chipset-based drivers are auto-detected via DMI vendor/product strings.
-The USB serial driver is selected explicitly with `--arduino`.
+The USB serial driver is selected with `--arduino`, the GPIO driver with `--gpio`.

@@ -2,7 +2,7 @@ Source: mediasmartserver
 Section: utils
 Priority: optional
 Maintainer: amd989 <amd989@users.noreply.github.com>
-Build-Depends: debhelper-compat (= 13), libudev-dev, g++
+Build-Depends: debhelper-compat (= 13), libudev-dev, libgpiod-dev, g++, pkg-config
 Standards-Version: 4.6.2
 Homepage: https://github.com/amd989/mediasmartserverd
 Vcs-Git: https://github.com/amd989/mediasmartserverd.git
@@ -14,7 +14,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LED status daemon for HP MediaSmart Server and compatible hardware
  Linux daemon that controls drive bay status LEDs on HP MediaSmart Server
  EX48X, Acer H340/H341/H342, Acer Altos easyStore M2, and Lenovo IdeaCentre
- D400. Also supports Arduino-based USB serial LED control for custom builds.
+ D400. Also supports Arduino-based USB serial LED control and direct GPIO
+ control via libgpiod for Raspberry Pi and similar boards.
  .
  Monitors disk presence and activity via udev/sysfs, provides system update
  notifications via LED colors, and supports light show animations.
