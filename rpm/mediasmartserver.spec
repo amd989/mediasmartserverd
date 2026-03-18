@@ -6,6 +6,8 @@ License:        Zlib
 URL:            https://github.com/amd989/mediasmartserverd
 Source0:        %{name}-%{version}.tar.gz
 
+%define debug_package %{nil}
+
 BuildRequires:  gcc-c++
 BuildRequires:  make
 BuildRequires:  systemd-rpm-macros
