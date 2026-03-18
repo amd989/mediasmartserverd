@@ -44,7 +44,7 @@ jobs:
               set -e
               apt-get update
               apt-get install -y --no-install-recommends \
-                build-essential debhelper libudev-dev
+                build-essential debhelper libudev-dev libgpiod-dev pkg-config
               # Update changelog version from tag
               sed -i "1s/([^)]*)/('"${{ steps.version.outputs.version }}"'-1)/" debian/changelog
               dpkg-buildpackage -us -uc -b
@@ -87,7 +87,7 @@ jobs:
             -v "$PWD":/build -w /build \
             rockylinux:9 bash -c '
               set -e
-              dnf install -y gcc-c++ make systemd-devel rpm-build systemd-rpm-macros
+              dnf install -y gcc-c++ make systemd-devel rpm-build systemd-rpm-macros libgpiod-devel pkgconfig
               VERSION='"${{ steps.version.outputs.version }}"'
               # Create source tarball
               mkdir -p /root/rpmbuild/{SOURCES,SPECS}

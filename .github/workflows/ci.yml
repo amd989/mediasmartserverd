@@ -38,7 +38,7 @@ jobs:
               set -e
               apt-get update
               apt-get install -y --no-install-recommends \
-                build-essential debhelper libudev-dev
+                build-essential debhelper libudev-dev libgpiod-dev pkg-config
               dpkg-buildpackage -us -uc -b
               echo "=== .deb build successful ==="
               for deb in ../*.deb; do dpkg-deb --info "$deb"; done
@@ -69,7 +69,7 @@ jobs:
             -v "$PWD":/build -w /build \
             rockylinux:9 bash -c '
               set -e
-              dnf install -y gcc-c++ make systemd-devel rpm-build systemd-rpm-macros
+              dnf install -y gcc-c++ make systemd-devel rpm-build systemd-rpm-macros libgpiod-devel pkgconfig
               mkdir -p /root/rpmbuild/{SOURCES,SPECS}
               tar czf /root/rpmbuild/SOURCES/mediasmartserver-0.6.0.tar.gz \
                 --transform "s,^\.,mediasmartserver-0.6.0," \
