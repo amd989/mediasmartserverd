@@ -22,6 +22,52 @@ This is an altered version of the original software. See
 
 -----------------------------------------------------------------------------
 
+## Installation
+
+### Debian / Ubuntu (apt)
+
+```bash
+curl -fsSL https://amd989.github.io/mediasmartserverd/setup.sh | sudo bash
+sudo apt install mediasmartserver
+```
+
+Or manually:
+
+```bash
+curl -fsSL https://amd989.github.io/mediasmartserverd/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/mediasmartserverd.gpg
+echo "deb [signed-by=/usr/share/keyrings/mediasmartserverd.gpg] https://amd989.github.io/mediasmartserverd stable main" | sudo tee /etc/apt/sources.list.d/mediasmartserverd.list
+sudo apt update
+sudo apt install mediasmartserver
+```
+
+### Rocky Linux / RHEL / Fedora (dnf)
+
+```bash
+curl -fsSL https://amd989.github.io/mediasmartserverd/setup-rpm.sh | sudo bash
+sudo dnf install mediasmartserver
+```
+
+Or manually:
+
+```bash
+sudo rpm --import https://amd989.github.io/mediasmartserverd/gpg.key
+sudo tee /etc/yum.repos.d/mediasmartserverd.repo <<EOF
+[mediasmartserverd]
+name=mediasmartserverd
+baseurl=https://amd989.github.io/mediasmartserverd/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://amd989.github.io/mediasmartserverd/gpg.key
+EOF
+sudo dnf install mediasmartserver
+```
+
+### From Source
+
+See [Building](#building) below.
+
+-----------------------------------------------------------------------------
+
 ## Usage
 
 ```
