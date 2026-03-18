@@ -1,0 +1,5 @@
+Component: main
+Origin: mediasmartserverd
+Label: mediasmartserverd
+Architecture: armhf
+Description: LED status daemon for HP MediaSmart Server and compatible hardware

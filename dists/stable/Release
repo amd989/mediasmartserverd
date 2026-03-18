@@ -1,0 +1,37 @@
+Origin: mediasmartserverd
+Label: mediasmartserverd
+Codename: stable
+Date: Wed, 18 Mar 2026 01:43:35 UTC
+Architectures: amd64 arm64 armhf
+Components: main
+Description: LED status daemon for HP MediaSmart Server and compatible hardware
+MD5Sum:
+ c7caac29263aaabbb6be611958e83b1c 1637 main/binary-amd64/Packages
+ a700c163f6f1ea25e8128f61eadc2ada 870 main/binary-amd64/Packages.gz
+ 2752378b63937c97fc78431f28ad0a8a 167 main/binary-amd64/Release
+ c78ecbb91c00108bb0ea36329e0fd7b8 1636 main/binary-arm64/Packages
+ 8c4053e9664e3c893106d652e0ce1666 872 main/binary-arm64/Packages.gz
+ 6b3706eebec9d3f4095bb35de7f021a3 167 main/binary-arm64/Release
+ 58b487e0e1d90e05e94fb1716b9a86f9 1636 main/binary-armhf/Packages
+ e90d02f189637ad357cd17e6faad112d 872 main/binary-armhf/Packages.gz
+ b19ba299525716956fd5fc31da088219 167 main/binary-armhf/Release
+SHA1:
+ d66989a72c7c3132235159dd6293d29205a1bbab 1637 main/binary-amd64/Packages
+ 919beb46e9b6020cd88a202c40c1ac55779ddc4a 870 main/binary-amd64/Packages.gz
+ c08ef847aa9a771b92f83687b82a826fe6d5e069 167 main/binary-amd64/Release
+ 4716d6f709c5e40f1de62c5a81252b5b68d00752 1636 main/binary-arm64/Packages
+ d1707711caf6c702fe1fb72dd025b6163458844f 872 main/binary-arm64/Packages.gz
+ 024765552ca7a251f09042832c25ae2148f9149c 167 main/binary-arm64/Release
+ 3441cf4eef09ac6f35c8d3c808e4ded9367db567 1636 main/binary-armhf/Packages
+ d86eda5d5fbfa6558b4de5307f1bc7bd725ee77e 872 main/binary-armhf/Packages.gz
+ 2bbd821ef9d6c0e5b7856b6ce4e90a55e825178a 167 main/binary-armhf/Release
+SHA256:
+ ed179d27675f2d369b89dcbd4d3f3632bad0d8515c05c966a00a0ebf407b24f2 1637 main/binary-amd64/Packages
+ fc993f55c1cc077697a3889f4ea97080e24f53162f03be14329023f53b7b8711 870 main/binary-amd64/Packages.gz
+ dcfb9a037bbfcc9af7d9441bd86d2de6c328aaf6019ed996c47ae92d0c52a005 167 main/binary-amd64/Release
+ 22f7e1ebd7e0a3affe5fea303f17acbcb311c5e7d947869e800d042050160d64 1636 main/binary-arm64/Packages
+ d31275c883562bb52969af3f2adaa7c76bda989f6f4819acd2ace797c4799851 872 main/binary-arm64/Packages.gz
+ afa382eb27514faed6dc15ece211c27575a84dc215573db5c6f3658786cabc8b 167 main/binary-arm64/Release
+ 1f380371affd07f2c913c1b4294cd6a0647c6f3db1694f6006c7fe356d797f49 1636 main/binary-armhf/Packages
+ 7f0388532b9c33eb349f34adb8ad2acdfc55902acdde1bf79f32d02a5bf699ab 872 main/binary-armhf/Packages.gz
+ c491eb042006cc4668636edadab8d6e78c30064a9044d7e3876a73db8b545b35 167 main/binary-armhf/Release

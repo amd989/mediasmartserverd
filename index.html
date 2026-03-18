@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><title>mediasmartserverd Package Repository</title></head>
+<body>
+<h1>mediasmartserverd Package Repository</h1>
+
+<h2>Debian / Ubuntu / Mint (apt)</h2>
+<h3>Quick Install</h3>
+<pre>
+curl -fsSL https://amd989.github.io/mediasmartserverd/setup.sh | sudo bash
+sudo apt install mediasmartserver
+</pre>
+<h3>Manual Setup</h3>
+<pre>
+curl -fsSL https://amd989.github.io/mediasmartserverd/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/mediasmartserverd.gpg
+echo "deb [signed-by=/usr/share/keyrings/mediasmartserverd.gpg] https://amd989.github.io/mediasmartserverd stable main" | sudo tee /etc/apt/sources.list.d/mediasmartserverd.list
+sudo apt update
+sudo apt install mediasmartserver
+</pre>
+
+<h2>Rocky Linux / RHEL / Fedora (dnf)</h2>
+<h3>Quick Install</h3>
+<pre>
+curl -fsSL https://amd989.github.io/mediasmartserverd/setup-rpm.sh | sudo bash
+sudo dnf install mediasmartserver
+</pre>
+<h3>Manual Setup</h3>
+<pre>
+sudo rpm --import https://amd989.github.io/mediasmartserverd/gpg.key
+sudo tee /etc/yum.repos.d/mediasmartserverd.repo &lt;&lt;EOF
+[mediasmartserverd]
+name=mediasmartserverd
+baseurl=https://amd989.github.io/mediasmartserverd/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://amd989.github.io/mediasmartserverd/gpg.key
+EOF
+sudo dnf install mediasmartserver
+</pre>
+</body>
+</html>
