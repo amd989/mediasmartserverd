@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   build:
@@ -124,179 +122,33 @@ jobs:
             packages/*.rpm
           generate_release_notes: true
 
-  publish-repos:
-    needs: [build, build-rpm]
+  # Packages are published centrally by amd989/packages, which serves
+  # packages.alejandro.md. This repository builds, attaches the artifacts to
+  # its own GitHub Release, and asks the publisher to pick that release up.
+  # The signing key and the storage credentials live only over there.
+  publish:
+    needs: [release]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 0
-        continue-on-error: true
-
-      - name: Initialize gh-pages if needed
-        run: |
-          if [ ! -f index.html ]; then
-            git init
-            git checkout -b gh-pages
-          fi
-
-      - name: Download deb artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: deb-*
-          path: incoming-deb
-          merge-multiple: true
-
-      - name: Download rpm artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: rpm-*
-          path: incoming-rpm
-          merge-multiple: true
-
-      - name: Install repo tools
-        run: sudo apt-get update && sudo apt-get install -y reprepro createrepo-c
-
-      - name: Import or generate GPG key
-        run: |
-          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-            GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
-          else
-            # Generate a temporary key for signing (user should replace with proper key)
-            cat > /tmp/gpg-batch <<GPGEOF
-              %no-protection
-              Key-Type: RSA
-              Key-Length: 4096
-              Subkey-Type: RSA
-              Subkey-Length: 4096
-              Name-Real: mediasmartserverd
-              Name-Email: amd989@users.noreply.github.com
-              Expire-Date: 0
-          GPGEOF
-            gpg --batch --gen-key /tmp/gpg-batch
-            GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
-            echo "::warning::Using auto-generated GPG key. For production, add GPG_PRIVATE_KEY secret."
-          fi
-          echo "GPG_KEY_ID=$GPG_KEY_ID" >> "$GITHUB_ENV"
-          gpg --armor --export "$GPG_KEY_ID" > gpg.key
-
-      - name: Configure reprepro
-        run: |
-          mkdir -p conf
-          cat > conf/distributions <<EOF
-          Origin: mediasmartserverd
-          Label: mediasmartserverd
-          Codename: stable
-          Architectures: amd64 arm64 armhf
-          Components: main
-          Description: LED status daemon for HP MediaSmart Server and compatible hardware
-          SignWith: ${{ env.GPG_KEY_ID }}
-          EOF
-
-      - name: Add deb packages to APT repo
-        run: |
-          for deb in incoming-deb/*.deb; do
-            reprepro includedeb stable "$deb"
-          done
-
-      - name: Create YUM/DNF repo
-        run: |
-          rm -rf rpm/packages rpm/repodata
-          mkdir -p rpm/packages
-          cp incoming-rpm/*.rpm rpm/packages/
-          gpg --batch --pinentry-mode loopback --detach-sign --armor rpm/packages/*.rpm 2>/dev/null || true
-          createrepo_c rpm/
-          gpg --batch --pinentry-mode loopback --detach-sign --armor rpm/repodata/repomd.xml
-
-      - name: Create index page
-        run: |
-          cat > index.html <<'HTMLEOF'
-          <!DOCTYPE html>
-          <html>
-          <head><title>mediasmartserverd Package Repository</title></head>
-          <body>
-          <h1>mediasmartserverd Package Repository</h1>
-
-          <h2>Debian / Ubuntu / Mint (apt)</h2>
-          <h3>Quick Install</h3>
-          <pre>
-          curl -fsSL https://amd989.github.io/mediasmartserverd/setup.sh | sudo bash
-          sudo apt install mediasmartserver
-          </pre>
-          <h3>Manual Setup</h3>
-          <pre>
-          curl -fsSL https://amd989.github.io/mediasmartserverd/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/mediasmartserverd.gpg
-          echo "deb [signed-by=/usr/share/keyrings/mediasmartserverd.gpg] https://amd989.github.io/mediasmartserverd stable main" | sudo tee /etc/apt/sources.list.d/mediasmartserverd.list
-          sudo apt update
-          sudo apt install mediasmartserver
-          </pre>
-
-          <h2>Rocky Linux / RHEL / Fedora (dnf)</h2>
-          <h3>Quick Install</h3>
-          <pre>
-          curl -fsSL https://amd989.github.io/mediasmartserverd/setup-rpm.sh | sudo bash
-          sudo dnf install mediasmartserver
-          </pre>
-          <h3>Manual Setup</h3>
-          <pre>
-          sudo rpm --import https://amd989.github.io/mediasmartserverd/gpg.key
-          sudo tee /etc/yum.repos.d/mediasmartserverd.repo &lt;&lt;EOF
-          [mediasmartserverd]
-          name=mediasmartserverd
-          baseurl=https://amd989.github.io/mediasmartserverd/rpm/
-          enabled=1
-          gpgcheck=1
-          gpgkey=https://amd989.github.io/mediasmartserverd/gpg.key
-          EOF
-          sudo dnf install mediasmartserver
-          </pre>
-          </body>
-          </html>
-          HTMLEOF
-
-      - name: Create APT setup script
-        run: |
-          cat > setup.sh <<'SETUPEOF'
-          #!/bin/bash
-          set -e
-          echo "Adding mediasmartserverd APT repository..."
-          curl -fsSL https://amd989.github.io/mediasmartserverd/gpg.key | gpg --dearmor -o /usr/share/keyrings/mediasmartserverd.gpg
-          echo "deb [signed-by=/usr/share/keyrings/mediasmartserverd.gpg] https://amd989.github.io/mediasmartserverd stable main" > /etc/apt/sources.list.d/mediasmartserverd.list
-          apt-get update
-          echo "Done! You can now run: sudo apt install mediasmartserver"
-          SETUPEOF
-          chmod +x setup.sh
-
-      - name: Create DNF setup script
-        run: |
-          cat > setup-rpm.sh <<'SETUPEOF'
-          #!/bin/bash
-          set -e
-          echo "Adding mediasmartserverd YUM/DNF repository..."
-          rpm --import https://amd989.github.io/mediasmartserverd/gpg.key
-          cat > /etc/yum.repos.d/mediasmartserverd.repo <<REPOEOF
-          [mediasmartserverd]
-          name=mediasmartserverd
-          baseurl=https://amd989.github.io/mediasmartserverd/rpm/
-          enabled=1
-          gpgcheck=1
-          gpgkey=https://amd989.github.io/mediasmartserverd/gpg.key
-          REPOEOF
-          echo "Done! You can now run: sudo dnf install mediasmartserver"
-          SETUPEOF
-          chmod +x setup-rpm.sh
-
-      - name: Deploy to GitHub Pages
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Clean up build artifacts, keep repo files
-          rm -rf incoming-deb incoming-rpm conf
-          git add -A
-          git commit -m "Update package repo for ${GITHUB_REF_NAME}" || true
-          git push origin gh-pages --force
+      - name: Publish to packages.alejandro.md
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PACKAGES_DISPATCH_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::PACKAGES_DISPATCH_TOKEN is not set. The release exists, but packages.alejandro.md was not asked to publish it. Set the secret, then run the publish workflow in amd989/packages by hand for $REPO $TAG."
+            exit 1
+          fi
+          # -f rather than -F: -F converts values that look like numbers or
+          # booleans, and the publisher expects the tag as a string.
+          gh api repos/amd989/packages/dispatches \
+            -f event_type=publish \
+            -f "client_payload[repo]=$REPO" \
+            -f "client_payload[tag]=$TAG"
+          {
+            echo "### Asked packages.alejandro.md to publish \`$REPO\` \`$TAG\`"
+            echo
+            echo "Follow it at https://github.com/amd989/packages/actions/workflows/publish.yaml"
+          } >> "$GITHUB_STEP_SUMMARY"
